@@ -3,6 +3,7 @@ package com.samatha.javachallengeindpro.controller;
 import com.samatha.javachallengeindpro.dto.Book;
 import com.samatha.javachallengeindpro.dto.User;
 import com.samatha.javachallengeindpro.exceptions.BookNotFoundException;
+import com.samatha.javachallengeindpro.exceptions.UserAccessException;
 import com.samatha.javachallengeindpro.model.CustomPrincipal;
 import com.samatha.javachallengeindpro.repository.BookRepository;
 import com.samatha.javachallengeindpro.repository.BorrowingRepository;
@@ -36,6 +37,8 @@ public class BookController {
 
             if (isAdmin) {
                 savedBook = bookRepository.save(book);
+            }else {
+                throw new UserAccessException("User Doesn't have permission to add an book");
             }
         }
         // Save the book to the database
@@ -91,14 +94,27 @@ public class BookController {
             @RequestParam(value = "title", required = false) String title,
             @RequestParam(value = "publishingCompany", required = false) String publishingCompany
     ) {
+        if(category==null)
+            category = "";
+        if(author ==null)
+            author="";
+        if (title == null) {
+            title = "";
+        }
+        if(isbn == null){
+            isbn = "";
+        }
+        if (publishingCompany == null) {
+            publishingCompany = "";
+        }
         // Perform necessary search options and fetch books from the database
-        List<Book> books = bookRepository.findByCategoryContainingOrAuthorContainingOrIsbnContainingOrTitleContainingOrPublishingCompanyContaining(category, author, isbn, title, publishingCompany);
+        List<Book> books = bookRepository.findByCategoryContainingAndAuthorContainingAndIsbnContainingAndTitleContainingAndPublishingCompanyContaining(category, author, isbn, title, publishingCompany);
 
         return ResponseEntity.ok(books);
     }
 
     // DELETE endpoint to delete a book (Only admins can delete)
-    @DeleteMapping("/{id}")
+/*    @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteBook(@PathVariable Long id, Authentication authentication) {
         if (authentication != null && authentication.isAuthenticated()) {
             boolean isAdmin = authentication.getAuthorities().stream()
@@ -106,7 +122,7 @@ public class BookController {
 
             if (isAdmin) {
                 // Check if the book has been borrowed by someone
-                boolean isBorrowed = borrowingRepository.existsByBookIdAndReturnedDateIsNull(id);
+                boolean isBorrowed = borrowingRepository.existsByBookIdAndIsBorrowedTrue(id);
 
                 if (isBorrowed) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Book is currently borrowed and cannot be deleted.");
@@ -116,6 +132,34 @@ public class BookController {
                 bookRepository.deleteById(id);
 
                 return ResponseEntity.noContent().build();
+            }
+        }
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // Return forbidden status if not authorized
+    }*/
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteBook(@PathVariable Long id, Authentication authentication) {
+        if (authentication != null && authentication.isAuthenticated()) {
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(authority -> authority.getAuthority().equals("ADMIN"));
+
+            if (isAdmin) {
+                // Check if the book has been borrowed by someone
+                boolean isBorrowed = borrowingRepository.existsByBookIdAndIsBorrowedTrue(id);
+
+                if (isBorrowed) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Book is currently borrowed and cannot be deleted.");
+                }
+
+                // Update the book's status to 'deleted' instead of deleting the record
+                Book book = bookRepository.findById(id).orElse(null);
+                if (book != null) {
+                    book.setIsDeleted(true);
+                    bookRepository.save(book);
+                    return ResponseEntity.noContent().build();
+                } else {
+                    return ResponseEntity.notFound().build();
+                }
             }
         }
 

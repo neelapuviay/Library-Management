@@ -36,6 +36,6 @@ public class Borrowing {
     @Column(name = "late_fee")
     private BigDecimal lateFee;
 
-
-
+    @Column(name = "isBorrowed")
+    private Boolean isBorrowed;
 }

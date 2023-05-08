@@ -37,8 +37,8 @@ public class AuthController {
     public ResponseEntity<AuthResponse> authenticate(@RequestBody String encryptedCredentials) {
         // Decrypt the encryptedCredentials using AES256
         // Separate the username and password from the decrypted string
-        String username = encryptedCredentials.substring(0, encryptedCredentials.indexOf("+"));
-        String password = encryptedCredentials.substring(encryptedCredentials.indexOf("+") + 1);
+        String username = encryptedCredentials.substring(0, encryptedCredentials.indexOf(","));
+        String password = encryptedCredentials.substring(encryptedCredentials.indexOf(",") + 1);
          username = decryptWithAES256(username);
          password = decryptWithAES256(password);
 
@@ -109,7 +109,7 @@ public class AuthController {
         System.out.println("Encrypted Username: " + encryptedUsername);
         System.out.println("Encrypted Password: " + encryptedPassword);
 
-        return new ResponseEntity( encryptedUsername +"+"+encryptedPassword, HttpStatus.OK);
+        return new ResponseEntity( encryptedUsername +","+encryptedPassword, HttpStatus.OK);
     }
 
 

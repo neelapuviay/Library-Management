@@ -18,5 +18,6 @@ public class Book {
     private String category;
     private String isbn;
     private String publishingCompany;
+    private Boolean isDeleted;
 
 }
